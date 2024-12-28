@@ -1,43 +1,57 @@
 package abyssalkraken
 
 import (
-	"sync"
+	"sort"
 )
 
 type SimpleAggregateRoot[ID AggregateID, E DomainEvent[ID]] struct {
-	mu            sync.Mutex
-	aggregateID   ID
-	pendingEvents []E
+	id            ID
+	aggregateType AggregateType
+	changes       []E
 }
 
-func NewSimpleAggregateRoot[ID AggregateID, E DomainEvent[ID]](id ID) *SimpleAggregateRoot[ID, E] {
+func NewSimpleAggregateRoot[ID AggregateID, E DomainEvent[ID]](id ID, aggregateType AggregateType) *SimpleAggregateRoot[ID, E] {
 	return &SimpleAggregateRoot[ID, E]{
-		aggregateID:   id,
-		pendingEvents: []E{},
+		id:            id,
+		aggregateType: aggregateType,
+		changes:       make([]E, 0),
 	}
 }
 
 func (a *SimpleAggregateRoot[ID, E]) ID() ID {
-	return a.aggregateID
+	return a.id
 }
 
-func (a *SimpleAggregateRoot[ID, E]) AddEvent(event E) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.pendingEvents = append(a.pendingEvents, event)
+func (a *SimpleAggregateRoot[ID, E]) Type() AggregateType {
+	return a.aggregateType
 }
 
-func (a *SimpleAggregateRoot[ID, E]) HasPendingEvents() bool {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	return len(a.pendingEvents) > 0
+func (a *SimpleAggregateRoot[ID, E]) HasChanges() bool {
+	return len(a.changes) > 0
 }
 
-func (a *SimpleAggregateRoot[ID, E]) CollectPendingEvents() []E {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+func (a *SimpleAggregateRoot[ID, E]) CollectChanges() []E {
+	sort.Slice(a.changes, func(i, j int) bool {
+		return a.changes[i].OccurredOn().Before(a.changes[j].OccurredOn())
+	})
 
-	events := a.pendingEvents
-	a.pendingEvents = nil
-	return events
+	collected := a.changes
+	a.changes = nil
+	return collected
+}
+
+func (a *SimpleAggregateRoot[ID, E]) Mutate(event E) {
+	panic("Mutate must be implemented by the aggregate root")
+}
+
+func (a *SimpleAggregateRoot[ID, E]) Apply(event E) {
+	a.changes = append(a.changes, event)
+
+	a.Mutate(event)
+}
+
+func (a *SimpleAggregateRoot[ID, E]) ReplayEvents(events []E) {
+	for _, event := range events {
+		a.Mutate(event)
+	}
 }
