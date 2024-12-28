@@ -1,4 +1,4 @@
-name: go-release
+name: tests
 
 on:
   push:
@@ -25,26 +25,4 @@ jobs:
           go test ./... -v
           go vet ./...
           go fmt ./...
-          golint ./... || true # (linters opcionais não devem falhar builds principais)
-
-  release:
-    name: release
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - name: checkout repository
-        uses: actions/checkout@v4
-
-      - name: set up go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.23
-
-      - name: build
-        run: go build -o your-library .
-
-      - name: release
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          golint ./...
