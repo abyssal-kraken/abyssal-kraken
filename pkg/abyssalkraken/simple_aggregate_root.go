@@ -2,11 +2,9 @@ package abyssalkraken
 
 import (
 	"sort"
-	"sync"
 )
 
 type SimpleAggregateRoot[ID AggregateID, E DomainEvent[ID]] struct {
-	mu            sync.Mutex
 	id            ID
 	aggregateType AggregateType
 	changes       []E
@@ -29,15 +27,10 @@ func (a *SimpleAggregateRoot[ID, E]) Type() AggregateType {
 }
 
 func (a *SimpleAggregateRoot[ID, E]) HasChanges() bool {
-	a.mu.Lock()
-	defer a.mu.Unlock()
 	return len(a.changes) > 0
 }
 
 func (a *SimpleAggregateRoot[ID, E]) CollectChanges() []E {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
 	sort.Slice(a.changes, func(i, j int) bool {
 		return a.changes[i].OccurredOn().Before(a.changes[j].OccurredOn())
 	})
@@ -52,9 +45,6 @@ func (a *SimpleAggregateRoot[ID, E]) Mutate(event E) {
 }
 
 func (a *SimpleAggregateRoot[ID, E]) Apply(event E) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
 	a.changes = append(a.changes, event)
 
 	a.Mutate(event)

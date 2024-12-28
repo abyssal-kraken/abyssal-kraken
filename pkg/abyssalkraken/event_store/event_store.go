@@ -13,7 +13,6 @@ import (
 type EventStore[ID abyssalkraken.AggregateID, E abyssalkraken.DomainEvent[ID]] struct {
 	eventPersistence   persistence.EventPersistence
 	eventSerialization serialization.EventSerialization[ID, E]
-	locks              sync.Map
 }
 
 func NewEventStore[ID abyssalkraken.AggregateID, E abyssalkraken.DomainEvent[ID]](
@@ -35,10 +34,6 @@ func (es *EventStore[ID, E]) AppendToStream(ctx context.Context, aggregateID ID,
 	if err != nil {
 		return fmt.Errorf("failed to serialize events: %w", err)
 	}
-
-	lock := es.lockAggregate(aggregateID)
-	lock.Lock()
-	defer lock.Unlock()
 
 	expectedVersionInt := expectedVersion.ToInt()
 	newVersion := expectedVersionInt + 1
@@ -106,11 +101,6 @@ func (es *EventStore[ID, E]) loadEventStream(ctx context.Context, aggregateID ID
 	}
 
 	return stream, nil
-}
-
-func (es *EventStore[ID, E]) lockAggregate(aggregateID ID) *sync.Mutex {
-	lock, _ := es.locks.LoadOrStore(aggregateID.String(), &sync.Mutex{})
-	return lock.(*sync.Mutex)
 }
 
 type EventStoreConcurrencyException[ID abyssalkraken.AggregateID] struct {

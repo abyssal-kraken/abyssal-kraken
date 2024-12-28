@@ -7,6 +7,7 @@ type SnapshotSerialization[
 	E abyssalkraken.DomainEvent[ID],
 	A abyssalkraken.AggregateRoot[ID, E],
 ] interface {
-	Serialize(snapshot abyssalkraken.Snapshot[ID, E, A]) ([]byte, error)
-	Deserialize(data []byte) (abyssalkraken.Snapshot[ID, E, A], error)
+	Serialize(aggregateRoot A) ([]byte, error)
+
+	Deserialize(data []byte) (A, error)
 }

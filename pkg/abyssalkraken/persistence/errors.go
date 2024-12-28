@@ -1,6 +1,9 @@
 package persistence
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type PersistenceConcurrencyError struct {
 	Name            string
@@ -13,4 +16,8 @@ func (e *PersistenceConcurrencyError) Error() string {
 		"concurrency error on %s: expected version %d but got %d",
 		e.Name, e.ExpectedVersion, e.ActualVersion,
 	)
+}
+
+func AsConcurrencyError(err error, target **PersistenceConcurrencyError) bool {
+	return errors.As(err, target)
 }

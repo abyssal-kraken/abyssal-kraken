@@ -4,10 +4,10 @@ import (
 	"fmt"
 )
 
-var MinVersion = Version{value: 0}
+var MinVersion = Version{Value: 0}
 
 type Version struct {
-	value int64
+	Value int64
 }
 
 type InvalidVersionError struct {
@@ -23,18 +23,18 @@ func NewVersion(value int64) (Version, error) {
 	if value < MinVersion.ToInt() {
 		return Version{}, &InvalidVersionError{
 			Version: value,
-			Message: "Version cannot be negative",
+			Message: fmt.Sprintf("Version cannot be less than %s", MinVersion.ToString()),
 		}
 	}
-	return Version{value: value}, nil
+	return Version{Value: value}, nil
 }
 
 func (v Version) ToInt() int64 {
-	return v.value
+	return v.Value
 }
 
 func (v Version) ToString() string {
-	return fmt.Sprintf("%d", v.value)
+	return fmt.Sprintf("%d", v.Value)
 }
 
 func ToVersion(value int64) (Version, error) {
