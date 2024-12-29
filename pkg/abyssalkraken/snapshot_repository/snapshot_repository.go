@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/abyssal-kraken/abyssalkraken/pkg/abyssalkraken"
 	"github.com/abyssal-kraken/abyssalkraken/pkg/abyssalkraken/persistence"
@@ -36,8 +37,9 @@ func (r *SnapshotRepository[ID, E, A]) SaveSnapshot(
 	ctx context.Context,
 	snapshot abyssalkraken.Snapshot[ID, E, A],
 	expectedVersion abyssalkraken.Version,
+	aggregateRootClass reflect.Type,
 ) error {
-	data, err := r.snapshotSerialization.Serialize(snapshot.AggregateRoot)
+	data, err := r.snapshotSerialization.Serialize(snapshot.AggregateRoot, aggregateRootClass)
 	if err != nil {
 		return fmt.Errorf("failed to serialize snapshot: %w", err)
 	}
@@ -68,6 +70,7 @@ func (r *SnapshotRepository[ID, E, A]) SaveSnapshot(
 func (r *SnapshotRepository[ID, E, A]) FindSnapshot(
 	ctx context.Context,
 	aggregateID ID,
+	aggregateRootClass reflect.Type,
 ) (*abyssalkraken.Snapshot[ID, E, A], error) {
 	record, err := r.snapshotPersistence.ReadRecord(ctx, aggregateID.String())
 	if err != nil {
@@ -77,7 +80,7 @@ func (r *SnapshotRepository[ID, E, A]) FindSnapshot(
 		return nil, nil
 	}
 
-	aggregateRoot, err := r.snapshotSerialization.Deserialize(record.Data)
+	aggregateRoot, err := r.snapshotSerialization.Deserialize(record.Data, aggregateRootClass)
 	if err != nil {
 		return nil, fmt.Errorf("failed to deserialize snapshot: %w", err)
 	}

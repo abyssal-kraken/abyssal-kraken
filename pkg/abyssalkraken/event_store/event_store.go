@@ -7,6 +7,7 @@ import (
 	"github.com/abyssal-kraken/abyssalkraken/pkg/abyssalkraken"
 	"github.com/abyssal-kraken/abyssalkraken/pkg/abyssalkraken/persistence"
 	"github.com/abyssal-kraken/abyssalkraken/pkg/abyssalkraken/serialization"
+	"reflect"
 	"sort"
 	"sync"
 )
@@ -26,12 +27,18 @@ func NewEventStore[ID abyssalkraken.AggregateID, E abyssalkraken.DomainEvent[ID]
 	}
 }
 
-func (es *EventStore[ID, E]) AppendToStream(ctx context.Context, aggregateID ID, expectedVersion abyssalkraken.Version, events []E) error {
+func (es *EventStore[ID, E]) AppendToStream(
+	ctx context.Context,
+	aggregateID ID,
+	expectedVersion abyssalkraken.Version,
+	events []E,
+	eventClass reflect.Type,
+) error {
 	if len(events) == 0 {
 		return nil
 	}
 
-	data, err := es.eventStreamSerialization.Serialize(events)
+	data, err := es.eventStreamSerialization.Serialize(events, eventClass)
 	if err != nil {
 		return fmt.Errorf("failed to serialize events: %w", err)
 	}
@@ -56,15 +63,29 @@ func (es *EventStore[ID, E]) AppendToStream(ctx context.Context, aggregateID ID,
 	return nil
 }
 
-func (es *EventStore[ID, E]) LoadEventStream(ctx context.Context, aggregateID ID) (abyssalkraken.EventStream[ID, E], error) {
-	return es.loadEventStream(ctx, aggregateID, nil)
+func (es *EventStore[ID, E]) LoadEventStream(
+	ctx context.Context,
+	aggregateID ID,
+	eventClass reflect.Type,
+) (abyssalkraken.EventStream[ID, E], error) {
+	return es.loadEventStream(ctx, aggregateID, nil, eventClass)
 }
 
-func (es *EventStore[ID, E]) LoadEventStreamAfterVersion(ctx context.Context, aggregateID ID, version abyssalkraken.Version) (abyssalkraken.EventStream[ID, E], error) {
-	return es.loadEventStream(ctx, aggregateID, &version)
+func (es *EventStore[ID, E]) LoadEventStreamAfterVersion(
+	ctx context.Context,
+	aggregateID ID,
+	version abyssalkraken.Version,
+	eventClass reflect.Type,
+) (abyssalkraken.EventStream[ID, E], error) {
+	return es.loadEventStream(ctx, aggregateID, &version, eventClass)
 }
 
-func (es *EventStore[ID, E]) loadEventStream(ctx context.Context, aggregateID ID, version *abyssalkraken.Version) (abyssalkraken.EventStream[ID, E], error) {
+func (es *EventStore[ID, E]) loadEventStream(
+	ctx context.Context,
+	aggregateID ID,
+	version *abyssalkraken.Version,
+	eventClass reflect.Type,
+) (abyssalkraken.EventStream[ID, E], error) {
 	var afterVersion *int64
 	if version != nil {
 		v := version.ToInt()
@@ -84,7 +105,7 @@ func (es *EventStore[ID, E]) loadEventStream(ctx context.Context, aggregateID ID
 	for _, record := range records {
 		go func(record persistence.BinaryData) {
 			defer wg.Done()
-			events, err := es.eventStreamSerialization.Deserialize(record.Data)
+			events, err := es.eventStreamSerialization.Deserialize(record.Data, eventClass)
 			if err == nil {
 				v, err := abyssalkraken.ToVersion(record.Version)
 				if err == nil {
@@ -115,14 +136,17 @@ type EventStoreConcurrencyException[ID abyssalkraken.AggregateID] struct {
 
 func (e *EventStoreConcurrencyException[ID]) Error() string {
 	return fmt.Sprintf(
-		"Concurrency failure when appending events to the stream for aggregate ID %s. Expected version: %d, Actual version: %d",
+		"Concurrency failure when appending events to the stream for aggregate ID %s. "+
+			"Expected version: %d, Actual version: %d",
 		e.AggregateID.String(),
 		e.ExpectedVersion,
 		e.ActualVersion,
 	)
 }
 
-func (es *EventStore[ID, E]) sortEventStream(eventStream abyssalkraken.EventStream[ID, E]) abyssalkraken.EventStream[ID, E] {
+func (es *EventStore[ID, E]) sortEventStream(
+	eventStream abyssalkraken.EventStream[ID, E],
+) abyssalkraken.EventStream[ID, E] {
 	events := make([]E, 0, len(eventStream.Events))
 	for _, event := range eventStream.Events {
 		events = append(events, event)
