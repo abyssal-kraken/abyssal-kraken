@@ -7,19 +7,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type R2dbcEventPersistence struct {
+type R2dbcEventStreamPersistence struct {
 	db        *gorm.DB
 	tableName string
 }
 
-func NewR2dbcEventPersistence(db *gorm.DB, tableName string) *R2dbcEventPersistence {
-	return &R2dbcEventPersistence{
+func NewR2dbcEventPersistence(db *gorm.DB, tableName string) *R2dbcEventStreamPersistence {
+	return &R2dbcEventStreamPersistence{
 		db:        db,
 		tableName: tableName,
 	}
 }
 
-func (r *R2dbcEventPersistence) Append(ctx context.Context, name string, data []byte, expectedVersion int64, newVersion int64) error {
+func (r *R2dbcEventStreamPersistence) Append(ctx context.Context, name string, data []byte, expectedVersion int64, newVersion int64) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var actualVersion int64
 
@@ -51,8 +51,8 @@ func (r *R2dbcEventPersistence) Append(ctx context.Context, name string, data []
 	})
 }
 
-func (r *R2dbcEventPersistence) ReadRecords(ctx context.Context, name string, afterVersion *int64) ([]persistence.BinaryData, error) {
-	query := fmt.Sprintf("SELECT name, version, data FROM %s WHERE name = ?", r.tableName)
+func (r *R2dbcEventStreamPersistence) ReadStream(ctx context.Context, name string, afterVersion *int64) ([]persistence.BinaryData, error) {
+	query := fmt.Sprintf("SELECT name, version, data FROM %s WHERE name = ? ORDER BY version", r.tableName)
 	var params []interface{}
 
 	params = append(params, name)
@@ -65,7 +65,7 @@ func (r *R2dbcEventPersistence) ReadRecords(ctx context.Context, name string, af
 	var results []persistence.BinaryData
 	err := r.db.WithContext(ctx).Raw(query, params...).Scan(&results).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to read records: %w", err)
+		return nil, fmt.Errorf("failed to read stream: %w", err)
 	}
 
 	return results, nil
