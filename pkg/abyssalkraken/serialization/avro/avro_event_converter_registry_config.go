@@ -2,6 +2,7 @@ package avro
 
 import (
 	"errors"
+	"fmt"
 	"github.com/abyssal-kraken/abyssalkraken/pkg/abyssalkraken"
 	"reflect"
 	"sync"
@@ -43,7 +44,16 @@ func AvroEventConverterRegistryConfig[
 			return
 		}
 
-		singleton = NewAvroEventConverterRegistry(converters)
+		singleton = NewAvroEventConverterRegistry[ID, E, GC]()
+
+		for _, converter := range converters {
+			if err := singleton.Register(typeKey[1], converter); err != nil {
+				initErr = fmt.Errorf("failed to register event converter: %w", err)
+				registryErrors.Store(typeKey, initErr)
+				return
+			}
+		}
+
 		registries.Store(typeKey, singleton)
 		registryErrors.Store(typeKey, nil)
 	})

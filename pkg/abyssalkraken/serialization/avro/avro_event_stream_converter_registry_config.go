@@ -2,6 +2,7 @@ package avro
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"sync"
 
@@ -44,7 +45,16 @@ func AvroEventStreamConverterRegistryConfig[
 			return
 		}
 
-		registryInstance = NewAvroEventStreamConverterRegistry(converters)
+		registryInstance = NewAvroEventStreamConverterRegistry[ID, E, GC]()
+
+		for _, converter := range converters {
+			if err := registryInstance.Register(typeKey[1], converter); err != nil {
+				initError = fmt.Errorf("failed to register event stream converter: %w", err)
+				registryErrors.Store(typeKey, initError)
+				return
+			}
+		}
+
 		eventStreamRegistries.Store(typeKey, registryInstance)
 		eventStreamRegistryErrors.Store(typeKey, nil)
 	})

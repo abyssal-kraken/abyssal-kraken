@@ -1,31 +1,35 @@
 package avro
 
 import (
+	"fmt"
 	"github.com/abyssal-kraken/abyssalkraken/pkg/abyssalkraken"
 	"reflect"
 )
 
 type AvroEventConverterRegistry[ID abyssalkraken.AggregateID, E abyssalkraken.DomainEvent[ID], GC any] struct {
-	convertersMap map[reflect.Type]AvroEventConverter[ID, E, GC]
+	converters map[reflect.Type]AvroEventConverter[ID, E, GC]
 }
 
-func NewAvroEventConverterRegistry[ID abyssalkraken.AggregateID, E abyssalkraken.DomainEvent[ID], GC any](
-	converters []AvroEventConverter[ID, E, GC],
-) *AvroEventConverterRegistry[ID, E, GC] {
-	convertersMap := make(map[reflect.Type]AvroEventConverter[ID, E, GC])
-	for _, converter := range converters {
-		convertersMap[converter.EventType()] = converter
+func NewAvroEventConverterRegistry[ID abyssalkraken.AggregateID, E abyssalkraken.DomainEvent[ID], GC any]() *AvroEventConverterRegistry[ID, E, GC] {
+	return &AvroEventConverterRegistry[ID, E, GC]{
+		converters: make(map[reflect.Type]AvroEventConverter[ID, E, GC]),
 	}
-	return &AvroEventConverterRegistry[ID, E, GC]{convertersMap: convertersMap}
 }
 
-func (r *AvroEventConverterRegistry[ID, E, GC]) FindConverter(
-	eventClass reflect.Type,
-) (AvroEventConverter[ID, E, GC], error) {
-	converter, exists := r.convertersMap[eventClass]
+func (r *AvroEventConverterRegistry[ID, E, GC]) Register(eventType reflect.Type, converter AvroEventConverter[ID, E, GC]) error {
+	if _, exists := r.converters[eventType]; exists {
+		return fmt.Errorf("event converter already registered for event type %s", eventType.String())
+	}
+
+	r.converters[eventType] = converter
+	return nil
+}
+
+func (r *AvroEventConverterRegistry[ID, E, GC]) FindConverter(eventType reflect.Type) (AvroEventConverter[ID, E, GC], error) {
+	converter, exists := r.converters[eventType]
 	if !exists {
 		return nil, &AvroEventConverterNotFoundException{
-			EventClass: eventClass,
+			EventType: eventType,
 		}
 	}
 	return converter, nil

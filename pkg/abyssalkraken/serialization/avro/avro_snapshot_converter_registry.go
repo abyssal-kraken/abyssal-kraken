@@ -1,31 +1,37 @@
 package avro
 
 import (
+	"fmt"
 	"github.com/abyssal-kraken/abyssalkraken/pkg/abyssalkraken"
 	"reflect"
 )
 
 type AvroSnapshotConverterRegistry[ID abyssalkraken.AggregateID, E abyssalkraken.DomainEvent[ID], A abyssalkraken.AggregateRoot[ID, E], GC any] struct {
-	convertersMap map[reflect.Type]AvroSnapshotConverter[ID, E, A, GC]
+	converters map[reflect.Type]AvroSnapshotConverter[ID, E, A, GC]
 }
 
-func NewAvroSnapshotConverterRegistry[ID abyssalkraken.AggregateID, E abyssalkraken.DomainEvent[ID], A abyssalkraken.AggregateRoot[ID, E], GC any](
-	converters []AvroSnapshotConverter[ID, E, A, GC],
-) *AvroSnapshotConverterRegistry[ID, E, A, GC] {
-	convertersMap := make(map[reflect.Type]AvroSnapshotConverter[ID, E, A, GC])
-	for _, converter := range converters {
-		convertersMap[converter.AggregateRootType()] = converter
+func NewAvroSnapshotConverterRegistry[ID abyssalkraken.AggregateID, E abyssalkraken.DomainEvent[ID], A abyssalkraken.AggregateRoot[ID, E], GC any]() *AvroSnapshotConverterRegistry[ID, E, A, GC] {
+	return &AvroSnapshotConverterRegistry[ID, E, A, GC]{
+		converters: make(map[reflect.Type]AvroSnapshotConverter[ID, E, A, GC]),
 	}
-	return &AvroSnapshotConverterRegistry[ID, E, A, GC]{convertersMap: convertersMap}
+}
+
+func (r *AvroSnapshotConverterRegistry[ID, E, A, GC]) Register(aggregateRootType reflect.Type, converter AvroSnapshotConverter[ID, E, A, GC]) error {
+	if _, exists := r.converters[aggregateRootType]; exists {
+		return fmt.Errorf("snapshot converter already registered for aggregate root type %s", aggregateRootType.String())
+	}
+
+	r.converters[aggregateRootType] = converter
+	return nil
 }
 
 func (r *AvroSnapshotConverterRegistry[ID, E, A, GC]) FindConverter(
-	aggregateRootClass reflect.Type,
+	aggregateRootType reflect.Type,
 ) (AvroSnapshotConverter[ID, E, A, GC], error) {
-	converter, exists := r.convertersMap[aggregateRootClass]
+	converter, exists := r.converters[aggregateRootType]
 	if !exists {
 		return nil, &AvroSnapshotConverterNotFoundException{
-			AggregateRootClass: aggregateRootClass,
+			AggregateRootType: aggregateRootType,
 		}
 	}
 	return converter, nil

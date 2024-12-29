@@ -1,4 +1,4 @@
-package command
+package commandbus
 
 import (
 	"fmt"
@@ -43,5 +43,5 @@ func NewCommandHandlerNotFoundException(commandType reflect.Type) error {
 }
 
 func (e *CommandHandlerNotFoundException) Error() string {
-	return fmt.Sprintf("no command handler found for command %s", e.commandType.String())
+	return fmt.Sprintf("no commandbus handler found for commandbus %s", e.commandType.String())
 }

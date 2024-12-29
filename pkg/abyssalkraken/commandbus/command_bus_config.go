@@ -1,4 +1,4 @@
-package command
+package commandbus
 
 import (
 	"errors"
@@ -11,13 +11,13 @@ var (
 	commandBusError error
 )
 
-func CommandBusConfig() (*CommandBus, error) {
+func CommandBusConfig(decorators ...CommandBusDecorator) (*CommandBus, error) {
 	commandBusOnce.Do(func() {
 		registry := &CommandHandlerRegistry{}
 
-		commandBus = NewCommandBus(registry)
+		commandBus = NewCommandBus(registry, decorators)
 		if commandBus == nil {
-			commandBusError = errors.New("failed to initialize CommandBus")
+			commandBusError = errors.New("falha ao inicializar CommandBus")
 		}
 	})
 

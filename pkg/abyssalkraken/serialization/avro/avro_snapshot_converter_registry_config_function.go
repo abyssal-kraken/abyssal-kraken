@@ -2,6 +2,7 @@ package avro
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"sync"
 
@@ -46,7 +47,16 @@ func AvroSnapshotConverterRegistryConfig[
 			return
 		}
 
-		registryInstance = NewAvroSnapshotConverterRegistry(converters)
+		registryInstance = NewAvroSnapshotConverterRegistry[ID, E, A, GC]()
+
+		for _, converter := range converters {
+			if err := registryInstance.Register(typeKey[1], converter); err != nil {
+				initError = fmt.Errorf("failed to register snapshot converter: %w", err)
+				registryErrors.Store(typeKey, initError)
+				return
+			}
+		}
+
 		snapshotRegistries.Store(typeKey, registryInstance)
 		snapshotRegistryErrors.Store(typeKey, nil)
 	})

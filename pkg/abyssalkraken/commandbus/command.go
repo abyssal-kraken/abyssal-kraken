@@ -1,4 +1,4 @@
-package command
+package commandbus
 
 type Command[R any] interface {
 }
