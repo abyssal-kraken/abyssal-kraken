@@ -30,9 +30,9 @@ func NewEventStore[ID abyssalkraken.AggregateID, E abyssalkraken.DomainEvent[ID]
 func (es *EventStore[ID, E]) AppendToStream(
 	ctx context.Context,
 	aggregateID ID,
-	expectedVersion abyssalkraken.Version,
 	events []E,
 	eventClass reflect.Type,
+	expectedVersion abyssalkraken.Version,
 ) error {
 	if len(events) == 0 {
 		return nil
@@ -68,23 +68,23 @@ func (es *EventStore[ID, E]) LoadEventStream(
 	aggregateID ID,
 	eventClass reflect.Type,
 ) (abyssalkraken.EventStream[ID, E], error) {
-	return es.loadEventStream(ctx, aggregateID, nil, eventClass)
+	return es.loadEventStream(ctx, aggregateID, eventClass, nil)
 }
 
 func (es *EventStore[ID, E]) LoadEventStreamAfterVersion(
 	ctx context.Context,
 	aggregateID ID,
-	version abyssalkraken.Version,
 	eventClass reflect.Type,
+	version abyssalkraken.Version,
 ) (abyssalkraken.EventStream[ID, E], error) {
-	return es.loadEventStream(ctx, aggregateID, &version, eventClass)
+	return es.loadEventStream(ctx, aggregateID, eventClass, &version)
 }
 
 func (es *EventStore[ID, E]) loadEventStream(
 	ctx context.Context,
 	aggregateID ID,
-	version *abyssalkraken.Version,
 	eventClass reflect.Type,
+	version *abyssalkraken.Version,
 ) (abyssalkraken.EventStream[ID, E], error) {
 	var afterVersion *int64
 	if version != nil {
@@ -97,7 +97,7 @@ func (es *EventStore[ID, E]) loadEventStream(
 		return abyssalkraken.EventStream[ID, E]{}, fmt.Errorf("failed to read event records: %w", err)
 	}
 
-	stream := abyssalkraken.EmptyStream[ID, E]()
+	stream := abyssalkraken.EmptyStream[ID, E](version)
 	results := make(chan abyssalkraken.EventStream[ID, E], len(records))
 	wg := sync.WaitGroup{}
 	wg.Add(len(records))

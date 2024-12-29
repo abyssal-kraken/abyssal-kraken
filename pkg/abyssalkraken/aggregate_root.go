@@ -10,6 +10,6 @@ type AggregateRoot[ID AggregateID, E DomainEvent[ID]] interface {
 	HasChanges() bool
 	CollectChanges() []E
 	Mutate(event E)
-	Apply(event E)
+	ApplyChange(event E)
 	ReplayEvents(events []E)
 }

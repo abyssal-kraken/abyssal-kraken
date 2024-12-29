@@ -15,7 +15,6 @@ type EventsConfig struct {
 }
 
 type SnapshotsConfig struct {
-	Enabled       bool                `mapstructure:"enabled"`
 	Persistence   PersistenceConfig   `mapstructure:"persistence"`
 	Serialization SerializationConfig `mapstructure:"serialization"`
 	Thresholds    map[string]int      `mapstructure:"thresholds"`
@@ -26,7 +25,8 @@ type PersistenceConfig struct {
 }
 
 type R2dbcPersistenceConfig struct {
-	TableName string `mapstructure:"tableName"`
+	TableName            string `mapstructure:"tableName"`
+	ValidateSchemaOnInit bool   `mapstructure:"validateSchemaOnInit" default:"true"`
 }
 
 type SerializationConfig struct {
@@ -34,7 +34,7 @@ type SerializationConfig struct {
 }
 
 type AvroSerializationConfig struct {
-	Encoder string `mapstructure:"encoder"`
+	Encoding string `mapstructure:"encoding"`
 }
 
 func LoadConfig(path string) (*AbyssalKrakenProperties, error) {

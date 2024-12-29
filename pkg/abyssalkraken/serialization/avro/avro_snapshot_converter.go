@@ -11,7 +11,7 @@ type AvroSnapshotConverter[ID abyssalkraken.AggregateID, E abyssalkraken.DomainE
 
 	AvroSchema() avro.Schema
 
-	ToAvroSchema(aggregateRoot A) (GC, error)
+	ToAvroSchema(snapshot A) (GC, error)
 
-	FromAvroSchema(avroContainer GC) (A, error)
+	FromAvroSchema(snapshot GC) (A, error)
 }

@@ -2,40 +2,41 @@ package abyssalkraken
 
 type EventStream[ID AggregateID, E DomainEvent[ID]] struct {
 	Version Version
-	Events  map[string]E
+	Events  []E
 }
 
 func (es EventStream[ID, E]) Plus(another EventStream[ID, E]) EventStream[ID, E] {
-	newEvents := make(map[string]E, len(es.Events))
-	for k, v := range es.Events {
-		newEvents[k] = v
-	}
-
-	for k, v := range another.Events {
-		newEvents[k] = v
-	}
+	combinedEvents := make([]E, len(es.Events)+len(another.Events))
+	copy(combinedEvents, es.Events)
+	copy(combinedEvents[len(es.Events):], another.Events)
 
 	return EventStream[ID, E]{
 		Version: another.Version,
-		Events:  newEvents,
+		Events:  combinedEvents,
 	}
 }
 
-func EmptyStream[ID AggregateID, E DomainEvent[ID]]() EventStream[ID, E] {
+func (es EventStream[ID, E]) IsEmpty() bool {
+	return len(es.Events) == 0
+}
+
+func EmptyStream[ID AggregateID, E DomainEvent[ID]](version *Version) EventStream[ID, E] {
+	if version != nil {
+		return EventStream[ID, E]{
+			Version: *version,
+			Events:  make([]E, 0),
+		}
+	}
+
 	return EventStream[ID, E]{
 		Version: MinVersion,
-		Events:  make(map[string]E),
+		Events:  make([]E, 0),
 	}
 }
 
 func StreamOf[ID AggregateID, E DomainEvent[ID]](version Version, events []E) EventStream[ID, E] {
-	eventSet := make(map[string]E, len(events))
-	for _, event := range events {
-		id := event.GetEventID()
-		eventSet[id.String()] = event // Usamos o GetEventID como chave única.
-	}
 	return EventStream[ID, E]{
 		Version: version,
-		Events:  eventSet,
+		Events:  events,
 	}
 }

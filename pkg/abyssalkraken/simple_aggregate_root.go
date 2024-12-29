@@ -44,7 +44,7 @@ func (a *SimpleAggregateRoot[ID, E]) Mutate(event E) {
 	panic("Mutate must be implemented by the aggregate root")
 }
 
-func (a *SimpleAggregateRoot[ID, E]) Apply(event E) {
+func (a *SimpleAggregateRoot[ID, E]) ApplyChange(event E) {
 	a.changes = append(a.changes, event)
 
 	a.Mutate(event)

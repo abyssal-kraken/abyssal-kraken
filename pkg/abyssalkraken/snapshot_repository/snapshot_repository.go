@@ -1,4 +1,4 @@
-package repository
+package snapshot_repository
 
 import (
 	"context"
@@ -35,7 +35,7 @@ func NewSnapshotRepository[
 
 func (r *SnapshotRepository[ID, E, A]) SaveSnapshot(
 	ctx context.Context,
-	snapshot abyssalkraken.Snapshot[ID, E, A],
+	snapshot abyssalkraken.AggregateVersion[ID, E, A],
 	expectedVersion abyssalkraken.Version,
 	aggregateRootClass reflect.Type,
 ) error {
@@ -71,7 +71,7 @@ func (r *SnapshotRepository[ID, E, A]) FindSnapshot(
 	ctx context.Context,
 	aggregateID ID,
 	aggregateRootClass reflect.Type,
-) (*abyssalkraken.Snapshot[ID, E, A], error) {
+) (*abyssalkraken.AggregateVersion[ID, E, A], error) {
 	record, err := r.snapshotPersistence.ReadRecord(ctx, aggregateID.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to read snapshot record: %w", err)
@@ -85,7 +85,7 @@ func (r *SnapshotRepository[ID, E, A]) FindSnapshot(
 		return nil, fmt.Errorf("failed to deserialize snapshot: %w", err)
 	}
 
-	return &abyssalkraken.Snapshot[ID, E, A]{
+	return &abyssalkraken.AggregateVersion[ID, E, A]{
 		AggregateRoot: aggregateRoot,
 		Version:       abyssalkraken.Version{Value: record.Version},
 	}, nil

@@ -86,3 +86,19 @@ func (r *R2dbcEventStreamPersistence) ReadStream(ctx context.Context, name strin
 
 	return results, nil
 }
+
+func (r *R2dbcEventStreamPersistence) ValidateSchema(ctx context.Context) error {
+	query := fmt.Sprintf("SELECT version, data FROM %s WHERE name = ? AND version = ?", r.tableName)
+
+	var result struct {
+		Version int64
+		Data    []byte
+	}
+
+	err := r.db.QueryRowContext(ctx, query, "<<validating_schema>>", -1).Scan(&result.Version, &result.Data)
+	if err != nil {
+		return fmt.Errorf("failed to validate %s table: %w", r.tableName, err)
+	}
+
+	return nil
+}
