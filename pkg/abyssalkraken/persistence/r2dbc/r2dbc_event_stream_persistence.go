@@ -12,7 +12,7 @@ type R2dbcEventStreamPersistence struct {
 	tableName string
 }
 
-func NewR2dbcEventPersistence(db *gorm.DB, tableName string) *R2dbcEventStreamPersistence {
+func NewR2dbcEventStreamPersistence(db *gorm.DB, tableName string) *R2dbcEventStreamPersistence {
 	return &R2dbcEventStreamPersistence{
 		db:        db,
 		tableName: tableName,
