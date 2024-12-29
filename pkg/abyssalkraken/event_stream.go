@@ -31,8 +31,8 @@ func EmptyStream[ID AggregateID, E DomainEvent[ID]]() EventStream[ID, E] {
 func StreamOf[ID AggregateID, E DomainEvent[ID]](version Version, events []E) EventStream[ID, E] {
 	eventSet := make(map[string]E, len(events))
 	for _, event := range events {
-		id := event.EventID()
-		eventSet[id.String()] = event // Usamos o EventID como chave única.
+		id := event.GetEventID()
+		eventSet[id.String()] = event // Usamos o GetEventID como chave única.
 	}
 	return EventStream[ID, E]{
 		Version: version,

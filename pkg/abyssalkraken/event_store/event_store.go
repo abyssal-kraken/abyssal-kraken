@@ -153,7 +153,7 @@ func (es *EventStore[ID, E]) sortEventStream(
 	}
 
 	sort.Slice(events, func(i, j int) bool {
-		return events[i].OccurredOn().Before(events[j].OccurredOn())
+		return events[i].GetOccurredOn().Before(events[j].GetOccurredOn())
 	})
 
 	return abyssalkraken.StreamOf(eventStream.Version, events)

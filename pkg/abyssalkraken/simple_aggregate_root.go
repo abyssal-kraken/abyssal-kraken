@@ -32,7 +32,7 @@ func (a *SimpleAggregateRoot[ID, E]) HasChanges() bool {
 
 func (a *SimpleAggregateRoot[ID, E]) CollectChanges() []E {
 	sort.Slice(a.changes, func(i, j int) bool {
-		return a.changes[i].OccurredOn().Before(a.changes[j].OccurredOn())
+		return a.changes[i].GetOccurredOn().Before(a.changes[j].GetOccurredOn())
 	})
 
 	collected := a.changes

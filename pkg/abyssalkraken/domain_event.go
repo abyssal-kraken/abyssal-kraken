@@ -3,9 +3,9 @@ package abyssalkraken
 import "time"
 
 type DomainEvent[ID AggregateID] interface {
-	AggregateID() ID
-	EventID() EventID
-	EventType() EventType
-	OccurredOn() time.Time
-	Metadata() map[string]string
+	GetAggregateID() ID
+	GetEventID() EventID
+	GetEventType() EventType
+	GetOccurredOn() time.Time
+	GetMetadata() map[string]string
 }
